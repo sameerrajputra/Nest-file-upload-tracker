@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File Upload Progress</title>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const socket = io('http://localhost:3000');
+      const clientId = socket.id;
+
+      document.getElementById('uploadForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://localhost:3000/upload', true);
+        xhr.setRequestHeader('client-id', clientId);
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = (event.loaded / event.total) * 100;
+            document.getElementById('progress').innerText = `Upload Progress: ${Math.round(progress)}%`;
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            alert('File uploaded successfully');
+          } else {
+            alert('File upload failed');
+          }
+        };
+
+        xhr.send(formData);
+      });
+
+      socket.on('uploadProgress', (progress) => {
+        document.getElementById('progress').innerText = `Upload Progress: ${progress}%`;
+      });
+    });
+  </script>
+</head>
+<body>
+  <form id="uploadForm">
+    <input type="file" id="fileInput" />
+    <button type="submit">Upload</button>
+  </form>
+  <div id="progress">Upload Progress: 0%</div>
+</body>
+</html>
